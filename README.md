@@ -2,5 +2,4 @@
 
 AI Intruder Detector
 
-Using OpenCV in Python
-Using Ardino with Servo Mounts
+Using OpenCV in Python and Arduino for servo mounts
