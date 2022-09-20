@@ -10,6 +10,12 @@ mp_pose = mp.solutions.pose
 cap = cv2.VideoCapture(0)
 arduino = SerialObject(digits=3)
 
+def make_240p():
+    cap.set(3, 360)
+    cap.set(4, 240)
+
+make_240p()
+    
 xPID = PID([0.033, 0, 0.02], 640 // 2, axis=0)
 yPID = PID([0.03, 0, 0.02], 480 // 2 - 40, axis=1)
 
