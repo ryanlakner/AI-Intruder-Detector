@@ -53,6 +53,14 @@ void lcd_setup() {
   lcd.print("Enter Password");
 }
 
+void clearData() {
+  // Go through array and clear data
+  while (data_count != 0) {
+    data[data_count--] = 0;
+  }
+  return;
+}
+
 void setup() {
   serialDetection.begin();
   lcd.init();
@@ -77,14 +85,18 @@ void loop() {
     lcd.setCursor(data_count,1);
     lcd.print(data[data_count]);
     data_count++;
-      if(!strcmp(data, master)) {
-      lcd.clear();
-      lcd.print("Correct");
-      digitalWrite(LED,LOW); //Sets our alarm to OFF
-      delay(2000);
-      lcd.clear();
-      lcd_setup();
+  }
+  if (data_count == Password_Length - 1) {
+    lcd.clear();
+    if (!strcmp(data, master)) {
+      lcd.print("    Correct");
+      //interval = 9999999;
     }
+    else {
+      lcd.print("   Incorrect");
+    } 
+    //lcd.clear();
+    clearData();
   }
   if(vals_Dec_Rec[2]>0)
   {
