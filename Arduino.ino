@@ -22,12 +22,13 @@ LiquidCrystal_I2C lcd(0x27, 16 ,2);
 char data[Password_Length];
 char master[Password_Length] = "1234";
 byte data_count = 0;
+byte data_count_test = 0;
 char custom_key;
 
 //Keypad setup
 const byte rows = 4; 
 const byte cols = 4; 
-char hexaKeys[rows][cols] = {
+char hexaKeys[rows][cols] ={
 {'1','2','3','A'},
 {'4','5','6','B'},
 {'7','8','9','C'},
@@ -42,81 +43,177 @@ Keypad customKeypad = Keypad(makeKeymap(hexaKeys), row_pins, col_pins, rows, col
 Servo servoHor;
 Servo servoVer;
 
-//Testing
+//delay function
 unsigned long startTime = 0;
-unsigned long interval = 500;
+unsigned long interval = 500;   //interval_led
 unsigned long currentTime;
 
-//Function for LCD Setup and Reset
-void lcd_setup() {
+//system status
+int System = 0;
+
+//Function for LCD to display
+void lcd_password_setup()
+{
   lcd.setCursor(1,0);
   lcd.print("Enter Password");
 }
 
-void clearData() {
+void lcd_start_setup()
+{
+  lcd.setCursor(1,0);
+  lcd.print("Press # To ARM");
+  lcd.setCursor(1,1);
+  lcd.print("Press C To CPW");
+}
+
+void lcd_changepw_setup()
+{
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("New Password:");
+}
+
+//LCD Display
+unsigned long lcd_show_correct = 0;
+unsigned long lcd_show_incorrect = 0;
+int lcd_state;
+/*state 0 : Idle
+ *state 1 : Correct
+ *state 2 : Incorrect
+ */
+
+void clearData()
+{
   // Go through array and clear data
-  while (data_count != 0) {
+  while (data_count != 0)
+  {
     data[data_count--] = 0;
   }
   return;
 }
 
-void setup() {
+void setup()
+{
   serialDetection.begin();
   lcd.init();
   lcd.backlight();
   pinMode(LED,OUTPUT);
   servoHor.attach(10);
   servoVer.attach(11);
-  lcd_setup(); //Calling LCD Setup
+  lcd_start_setup(); //Calling LCD Setup
 }
 
-void loop() {
+void loop()
+{
   currentTime = millis();
   serialDetection.Get(vals_Dec_Rec);
   servoHor.write(vals_Dec_Rec[0]);
   servoVer.write(vals_Dec_Rec[1]);
 
   //Look for keypress
-  custom_key = customKeypad.getKey();
+  custom_key = customKeypad.getKey(); 
+
   if(custom_key)
   {
+    //Press # to ARM
+    if(custom_key == '#' && System == 0)
+    {
+    lcd_state = 0;
+    System = 1;
+    lcd_password_setup();
+    }
+
+    else if(custom_key == 'C' && System == 0)
+    { 
+    lcd_changepw_setup();     
+    System = 2;
+    }
+
+    else if(System == 2)
+    {
+      master[data_count_test] = custom_key;
+      lcd.setCursor(data_count_test,1);
+      lcd.print("*");
+      data_count_test++;
+    }
+    
+    else if(System == 1)
+    {
     data[data_count] = custom_key;
     lcd.setCursor(data_count,1);
-    lcd.print(data[data_count]);
+    //lcd.print(data[data_count]);
+    lcd.print("*");
     data_count++;
-  }
-  if (data_count == Password_Length - 1) {
-    lcd.clear();
-    if (!strcmp(data, master)) {
-      lcd.print("    Correct");
-      //interval = 9999999;
     }
-    else {
+  }
+  
+  if (data_count_test == Password_Length - 1)
+  {
+    lcd_start_setup();
+    System = 0;
+    data_count_test = 0;
+  }
+  
+  if (data_count == Password_Length - 1)
+  {
+    lcd.clear();
+    if (!strcmp(data, master))
+    {
+      lcd.print("    Correct");
+      lcd_show_correct = currentTime;
+      System = 0;
+      lcd_state = 1;
+    }
+    else
+    {
       lcd.print("   Incorrect");
-    } 
-    //lcd.clear();
+      lcd_show_incorrect = currentTime;
+      lcd_state = 2;
+    }
     clearData();
   }
-  if(vals_Dec_Rec[2]>0)
+
+  //Displaying result for 3s on lcd
+  if(lcd_state == 1)
   {
-    if(currentTime - startTime >= interval)
+    if(currentTime - lcd_show_correct >= 2000)
     {
-      startTime = currentTime;
-      if(LED_state == 0)
+      lcd_start_setup();
+    }
+  }
+
+  if(lcd_state == 2)
+  {
+    if(currentTime - lcd_show_incorrect >= 2000)
+    {
+      lcd_password_setup();
+    }
+  }
+
+  //Alarm
+  if(System == 1)
+  {
+    if(vals_Dec_Rec[2]>0)
+    {
+      if(currentTime - startTime >= interval)
       {
-        LED_state = 1;
+        startTime = currentTime;
+        if(LED_state == 0)
+        {
+          LED_state = 1;
+        } else {
+          LED_state = 0;
+        }
+        digitalWrite(LED,LED_state);
       }
-      else
-      {
-        LED_state = 0;
-      }
-      digitalWrite(LED,LED_state);
+    }
+    else
+    {
+      digitalWrite(LED,LOW);
     }
   }
   else
   {
-   digitalWrite(LED,LOW);
+    digitalWrite(LED,LOW);
   }
-  
 }
