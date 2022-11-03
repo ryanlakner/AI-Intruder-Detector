@@ -22,6 +22,7 @@ LiquidCrystal_I2C lcd(0x27, 16 ,2);
 char data[Password_Length];
 char master[Password_Length] = "1234";
 byte data_count = 0;
+byte data_count_cur_pw = 0;
 byte data_count_test = 0;
 char custom_key;
 
@@ -68,9 +69,14 @@ void lcd_start_setup()
 
 void lcd_changepw_setup()
 {
-  lcd.clear();
   lcd.setCursor(1,0);
   lcd.print("New Password:");
+}
+
+void lcd_ask_current_pw_setup()
+{
+  lcd.setCursor(0,0);
+  lcd.print("Current Password:");
 }
 
 //LCD Display
@@ -88,6 +94,16 @@ void clearData()
   while (data_count != 0)
   {
     data[data_count--] = 0;
+  }
+  return;
+}
+
+void clearDataCur()
+{
+  // Go through array and clear data
+  while (data_count_cur_pw != 0)
+  {
+    data[data_count_cur_pw--] = 0;
   }
   return;
 }
@@ -120,23 +136,18 @@ void loop()
     {
     lcd_state = 0;
     System = 1;
+    lcd.clear();
     lcd_password_setup();
     }
 
     else if(custom_key == 'C' && System == 0)
-    { 
-    lcd_changepw_setup();     
+    {
+    lcd_state = 0;
     System = 2;
+    lcd.clear();
+    lcd_ask_current_pw_setup();
     }
 
-    else if(System == 2)
-    {
-      master[data_count_test] = custom_key;
-      lcd.setCursor(data_count_test,1);
-      lcd.print("*");
-      data_count_test++;
-    }
-    
     else if(System == 1)
     {
     data[data_count] = custom_key;
@@ -145,12 +156,50 @@ void loop()
     lcd.print("*");
     data_count++;
     }
+    
+    else if(System == 2)
+    {
+    data[data_count_cur_pw] = custom_key;
+    lcd.setCursor(data_count_cur_pw,1);
+    lcd.print("*");
+    data_count_cur_pw++;
+    }
+
+    else if(System == 3)
+    {
+      master[data_count_test] = custom_key;
+      lcd.setCursor(data_count_test,1);
+      lcd.print("*");
+      data_count_test++;
+    }
+  }
+
+  //Checking password
+  if (data_count_cur_pw == Password_Length - 1)
+  {
+    lcd.clear();
+    if (!strcmp(data, master))
+    {
+      System = 3;
+      lcd.print("    Correct");
+      lcd_show_correct = currentTime;
+      lcd_state = 3;
+    }
+    else
+    {
+      lcd.print("   Incorrect");
+      lcd_show_incorrect = currentTime;
+      lcd_state = 4;
+    }
+    clearDataCur();
   }
   
   if (data_count_test == Password_Length - 1)
   {
-    lcd_start_setup();
     System = 0;
+    lcd_state = 0;
+    lcd.clear();
+    lcd_start_setup();
     data_count_test = 0;
   }
   
@@ -159,9 +208,9 @@ void loop()
     lcd.clear();
     if (!strcmp(data, master))
     {
+      System = 0;
       lcd.print("    Correct");
       lcd_show_correct = currentTime;
-      System = 0;
       lcd_state = 1;
     }
     else
@@ -173,7 +222,7 @@ void loop()
     clearData();
   }
 
-  //Displaying result for 3s on lcd
+  //Displaying result for 3 sec on lcd
   if(lcd_state == 1)
   {
     if(currentTime - lcd_show_correct >= 2000)
@@ -189,7 +238,23 @@ void loop()
       lcd_password_setup();
     }
   }
-
+  
+  if(lcd_state == 3)
+  {
+    if(currentTime - lcd_show_correct >= 2000)
+    {
+      lcd_changepw_setup();
+    }
+  }
+  
+  if(lcd_state == 4)
+  {
+    if(currentTime - lcd_show_incorrect >= 2000)
+    {
+      lcd_ask_current_pw_setup();
+    }
+  }
+  
   //Alarm
   if(System == 1)
   {
