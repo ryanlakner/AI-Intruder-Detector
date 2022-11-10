@@ -1,5 +1,7 @@
-# Senior-Design
+# AI-Intruder-Detector
 
-AI Intruder Detector
+Team: Ryan Lakner, Khang Pham, Tu Nguyen, Luis Soriano
 
-Using OpenCV in Python and Arduino for servo mounts
+Computer Engineering Technology Senior Design Project
+Using OpenCV in Python and Arduino for camera mounted on servos
+Body Tracking, Keypad, Alarm Security
