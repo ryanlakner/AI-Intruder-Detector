@@ -9,3 +9,5 @@ Body Tracking, Keypad, Alarm Security
 Finite State Machine:
 
 ![FSM](https://user-images.githubusercontent.com/95839458/201249561-3599adbb-eae2-454f-bff1-60e64829ff81.png)
+
+<img src="[https://user-images.githubusercontent.com/95839458/201249561-3599adbb-eae2-454f-bff1-60e64829ff81.png]" width=50% height=50%>
